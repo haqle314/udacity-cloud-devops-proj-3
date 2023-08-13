@@ -177,6 +177,8 @@ jobs:
             cd backend
             npm install
             npm run migrations | tee migrations_dump.txt
+      - run: cat backend/migrations_dump.txt
+      - run: printenv | grep TYPEORM
       - run:
           name: Send migrations status to kv store
           command: |
@@ -185,13 +187,13 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: cimg/aws
+      - image: python:3.9-alpine
     steps:
       - attach_workspace:
           at: .
       - run:
           name: Install deps
-          command: apt -y update && apt -y install nodejs npm
+          command: apk add --update nodejs && pip install awscli
       - run:
           name: Get backend URL
           command: |
