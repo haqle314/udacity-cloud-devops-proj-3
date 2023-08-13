@@ -177,7 +177,7 @@ jobs:
             cd backend
             npm install
             npm run migrations | tee migrations_dump.txt
-      - run: ls $TYPEORM_MIGRATIONS_DIR
+      - run: ls
       - run: cat backend/migrations_dump.txt
       - run: printenv | grep TYPEORM > typeorm-vars
       - store_artifacts:
@@ -198,6 +198,7 @@ jobs:
       - run:
           name: Install deps
           command: apk add --update nodejs && pip install awscli
+      - run: ls
       - run:
           name: Get backend URL
           command: |
