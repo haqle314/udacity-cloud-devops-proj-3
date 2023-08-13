@@ -177,7 +177,7 @@ jobs:
             cd backend
             npm install
             npm run migrations | tee migrations_dump.txt
-      - run: ls
+      - run: cd backend && ls $TYPEORM_MIGRATIONS_DIR
       - run: cat backend/migrations_dump.txt
       - run: printenv | grep TYPEORM > typeorm-vars
       - store_artifacts:
@@ -193,6 +193,7 @@ jobs:
     docker:
       - image: python:3.9-alpine
     steps:
+      - checkout
       - attach_workspace:
           at: .
       - run:
