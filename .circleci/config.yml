@@ -111,6 +111,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install dependencies
+          command: yum -y install tar gzip
+      - run:
           name: Ensure backend infrastructure exist
           command: |
             aws cloudformation deploy \
@@ -134,10 +137,31 @@ jobs:
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
-          root: .circleci/ansible
-          paths: [inventory.txt]
+          root: .
+          paths: [.circleci/ansible/inventory.txt]
       - destroy-environment:
           workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
+
+  configure-infrastructure:
+    docker:
+      - image: python:3.9-alpine
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: [96:28:df:43:60:f1:02:1b:02:59:97:13:09:7d:2a:37]
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install deps
+          command: |
+            apk add --update ansible
+            pip install awscli
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
+          
 
 workflows:
   default:
@@ -157,3 +181,5 @@ workflows:
           filters:
             branches:
               only: [master]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
