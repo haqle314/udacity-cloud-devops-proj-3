@@ -177,12 +177,6 @@ jobs:
             cd backend
             npm install
             npm run migrations | tee migrations_dump.txt
-      - run: cd backend && ls $TYPEORM_MIGRATIONS_DIR
-      - run: cat backend/migrations_dump.txt
-      - run: printenv | grep TYPEORM > typeorm-vars
-      - store_artifacts:
-          path: typeorm-vars
-          destination: vars-file
       - run:
           name: Send migrations status to kv store
           command: |
@@ -199,14 +193,12 @@ jobs:
           at: .
       - run:
           name: Install deps
-          command: apk add --update nodejs npm && pip install awscli
-      - run: ls
+          command: apk add --update nodejs-current npm && pip install awscli
       - run:
           name: Get backend URL
           command: |
             export BACKEND_IP=$(tail -n1 .circleci/ansible/inventory.txt)
             export API_URL="http://$BACKEND_IP:3030"
-            ls
             touch frontend/.env
             echo API_URL=$API_URL | tee -a frontend/.env
       - run:
