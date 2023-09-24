@@ -283,7 +283,7 @@ jobs:
             cat frontend/.env
             source frontend/.env
             echo $API_URL
-            curl -s $API_URL/api/status
+            curl $API_URL/api/status
             curl -s $API_URL/api/status | grep -q ok
       - run:
           name: Frontend smoke test
