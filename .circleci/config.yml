@@ -23,7 +23,7 @@ commands:
           name: Revert mirgations
           when: on_fail
           command: |
-            SUCCESS=$(curl --insecure https://kvdb.io/Q6vQcCfxcJu4aGAtngn2qL/migration_<< parameters.workflow-id >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/Q6vQcCfxcJu4aGAtngn2qL/migration_<<parameters.workflow-id>>)
             if (( $SUCCESS == 1 ));
             then
                 cd backend
@@ -215,7 +215,7 @@ jobs:
           at: .
       - run:
           name: Install deps
-          command: apk add --update nodejs-current npm && pip install awscli
+          command: apk add --update nodejs-current npm curl && pip install awscli
       - run:
           name: Get backend URL
           command: |
@@ -230,7 +230,7 @@ jobs:
             npm install
             export NODE_OPTIONS=--openssl-legacy-provider
             npm run build
-            aws s3 cp frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment:
           workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
@@ -246,7 +246,7 @@ jobs:
           at: .
       - run:
           name: Install deps
-          command: apk add --update ansible nodejs npm
+          command: apk add --update ansible nodejs npm curl
       - run:
           name: Deploy backend
           command: |
