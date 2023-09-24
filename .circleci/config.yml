@@ -275,12 +275,15 @@ jobs:
           at: .
       - run:
           name: Install deps
-          command: apk add --update curl
+          command: apk add --update curl && pip install awscli
       - run:
           name: Backend smoke test
           command: |
             ls -A frontend
+            cat frontend/.env
             source frontend/.env
+            echo $API_URL
+            curl -s $API_URL/api/status
             curl -s $API_URL/api/status | grep -q ok
       - run:
           name: Frontend smoke test
