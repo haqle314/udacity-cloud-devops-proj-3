@@ -11,8 +11,25 @@ commands:
           name: Destroy stacks
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name udapeople-backend-prod-<<parameters.workflow-id>>
-            aws cloudformation delete-stack --stack-name udapeople-frontend-prod-<<parameters.workflow-id>>        
+            aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow-id>>
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow-id>>
+  revert-migrations:
+    description: Revert DB migrations
+    parameters:
+      workflow-id:
+        type: string
+    steps:
+      - run:
+          name: Revert mirgations
+          when: on_fail
+          command: |
+            SUCCESS=$(curl --insecure https://kvdb.io/Q6vQcCfxcJu4aGAtngn2qL/migration_<< parameters.workflow_id >>)
+            if (( $SUCCESS == 1 ));
+            then
+                cd backend
+                npm install
+                npm run migration:revert
+            fi
 
 jobs:
   build-frontend:
@@ -31,6 +48,9 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - persist_to_workspace:
+          root: .
+          paths: [frontend/dist]
 
   build-backend:
     docker:
@@ -48,7 +68,9 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-
+      - persist_to_workspace:
+          root: .
+          paths: [backend/dist]
   test-frontend:
     docker:
       - image: cimg/node:18.17
@@ -206,8 +228,39 @@ jobs:
           command: |
             cd frontend
             npm install
+            export NODE_OPTIONS=--openssl-legacy-provider
             npm run build
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws s3 cp frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - destroy-environment:
+          workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
+  deploy-backend:
+    docker:
+      - image: python:3.9-alpine
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: [96:28:df:43:60:f1:02:1b:02:59:97:13:09:7d:2a:37]
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install deps
+          command: apk add --update ansible nodejs npm
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm install
+            npm run build
+            cd ..
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy-environment:
+          workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
 workflows:
   default:
@@ -232,4 +285,4 @@ workflows:
       - run-migrations:
           requires: [configure-infrastructure]
       - deploy-frontend:
-          requires: [deploy-infrastructure]
+          requires: [deploy-infrastructure, build-frontend]
