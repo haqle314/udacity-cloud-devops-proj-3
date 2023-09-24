@@ -231,6 +231,9 @@ jobs:
             export NODE_OPTIONS=--openssl-legacy-provider
             npm run build
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      - persist_to_workspace:
+          root: .
+          paths: [frontend/.env]
       - destroy-environment:
           workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
@@ -268,15 +271,17 @@ jobs:
       - image: alpine
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run:
           name: Install deps
           command: apk add --update curl
       - run:
           name: Backend smoke test
           command: |
-            URL="http://${BACKEND_IP}:3030"
-            echo $URL
-            curl -s $URL/api/status | grep -q ok
+            ls -A frontend
+            source frontend/.env
+            curl -s $API_URL/api/status | grep -q ok
       - run:
           name: Frontend smoke test
           command: |
