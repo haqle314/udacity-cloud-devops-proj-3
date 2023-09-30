@@ -12,8 +12,7 @@ commands:
           when: on_fail
           command: |
             # aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow-id>>
-            bucket=$(aws cloudformation --stack-name udapeople-frontend-<<parameters.workflow-id>> --no-cli-pager --output text --query "StackResourceSummaries[?ResourceType == 'AWS::S3::Bucket'].PhysicalResourceId")
-            aws s3 rm s3://$bucket --recursive
+            aws s3 rm s3://udapeople-<<parameters.workflow-id>> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow-id>>
   revert-migrations:
     description: Revert DB migrations
