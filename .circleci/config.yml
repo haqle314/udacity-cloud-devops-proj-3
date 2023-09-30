@@ -200,8 +200,9 @@ jobs:
           name: Run migrations
           command: |
             cd backend
-            npm install
-            npm run migrations | tee migrations_dump.txt
+            ls -l
+            node_modules/.bin/ts-node -T -r dotenv/config node_modules/.bin/typeorm migration:show
+            npm run migrations > migrations_dump.txt
       - run:
           name: check migrations
           command: |
@@ -331,7 +332,7 @@ workflows:
       - run-migrations:
           requires: [build-backend]
       - deploy-backend:
-          requires: [run-migrations, build-backend]
+          requires: [run-migrations, build-backend, configure-infrastructure]
       - deploy-frontend:
           requires: [deploy-infrastructure, build-frontend]
       - smoke-test:
