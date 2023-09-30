@@ -201,8 +201,7 @@ jobs:
           command: |
             cd backend
             npm install
-            ls -l
-            node_modules/.bin/ts-node -T -r dotenv/config node_modules/.bin/typeorm migration:show
+            export NODE_TLS_REJECT_UNAUTHORIZED=0
             npm run migrations > migrations_dump.txt
       - run:
           name: check migrations
