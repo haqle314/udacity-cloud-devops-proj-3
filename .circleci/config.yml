@@ -203,6 +203,11 @@ jobs:
             npm install
             npm run migrations | tee migrations_dump.txt
       - run:
+          name: check migrations
+          command: |
+            ls -l backend/migrations_dump.txt
+            cat backend/migrations_dump.txt
+      - run:
           name: Send migrations status to kv store
           command: |
             grep -q "has been executed successfully." backend/migrations_dump.txt \
