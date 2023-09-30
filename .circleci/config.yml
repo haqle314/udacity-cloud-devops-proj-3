@@ -191,7 +191,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/node:18.17
+      - image: cimg/node:10.24
     steps:
       - checkout
       - restore_cache:
@@ -200,6 +200,7 @@ jobs:
           name: Run migrations
           command: |
             cd backend
+            npm install
             ls -l
             node_modules/.bin/ts-node -T -r dotenv/config node_modules/.bin/typeorm migration:show
             npm run migrations > migrations_dump.txt
