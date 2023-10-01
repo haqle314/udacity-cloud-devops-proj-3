@@ -320,6 +320,25 @@ jobs:
             
             echo "Old workflow ID: $OLD_WORKFLOW_ID"
             echo "New workflow ID: ${CIRCLE_WORKFLOW_ID:0:7}"
+  cleanup:
+    docker:
+      - image: python:3.9-alpine
+    steps:
+      - checkout
+      - run:
+          name: Install deps
+          command: pip install awscli
+      - run:
+          name: Fetch old workflow ID
+          command: |
+            OLD_WORKFLOW_ID=$(aws cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            if [[ "$OLD_WORKFLOW_ID" != "${CIRCLE_WORKFLOW_ID:0:7}" ]]; then
+                echo "Deleting previous cloudformation stacks"
+                aws s3 rm "s3://udapeople-$OLD_WORKFLOW_ID" --recursive
+                aws cloudformation delete-stack --stack-name "udapeople-frontend-$OLD_WORKFLOW_ID"
+                aws cloudformation delete-stack --stack-name "udapeople-backend-$OLD_WORKFLOW_ID"
+            fi
+
 workflows:
   default:
     jobs:
@@ -341,7 +360,7 @@ workflows:
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
-          requires: [build-backend]
+          requires: [build-backend, deploy-infrastructure]
       - deploy-backend:
           requires: [run-migrations, build-backend, configure-infrastructure]
       - deploy-frontend:
@@ -350,3 +369,5 @@ workflows:
           requires: [deploy-frontend, deploy-backend]
       - cloudfront-update:
           requires: [smoke-test]
+      - cleanup:
+          requires: [cloudfront-update]
