@@ -308,6 +308,26 @@ jobs:
           workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
           workflow-id: "${CIRCLE_WORKFLOW_ID:0:7}"
+  cloudfront-update:
+    docker:
+      - image: python:3.9-alpine
+    steps:
+      - checkout
+      - run:
+          name: Install deps
+          command: apk add --update nodejs npm curl && pip install awscli
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            OLD_WORKFLOW_ID=$(aws cloudformation list-exports --query "Exports[?Name==`WorkflowID`].Value" --no-paginate --output text)
+            
+            aws cloudformation deploy \
+                --template-file .circleci/files/cloudfront.yml \
+                --stack-name InitialStack \
+                --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
+            
+            echo "Old workflow ID: $OLD_WORKFLOW_ID"
+            echo "New workflow ID: ${CIRCLE_WORKFLOW_ID:0:7"
 workflows:
   default:
     jobs:
@@ -336,3 +356,5 @@ workflows:
           requires: [deploy-infrastructure, build-frontend]
       - smoke-test:
           requires: [deploy-frontend, deploy-backend]
+      - cloudfront-update:
+          requires: [smoke-test]
